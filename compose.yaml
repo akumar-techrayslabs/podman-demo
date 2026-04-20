@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: demo_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: demodb
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # Auto-run migrations on first boot
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Express API ───────────────────────────────────────────────────────────
+  api:
+    # Option A – build locally
+    build:
+      context: .
+      dockerfile: Containerfile
+    # Option B – pull from GHCR (comment A out and uncomment this)
+    # image: ghcr.io/<your-username>/podman-demo:latest
+    container_name: demo_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: demodb
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  pg_data:
