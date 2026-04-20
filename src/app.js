@@ -11,7 +11,7 @@ app.use(express.json());
  */
 const pool = new Pool({
   host: process.env.DB_HOST || "db", // IMPORTANT for container
-  port: process.env.DB_PORT || 5432,
+  port: process.env.DB_PORT || 5433,
   user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
   database: process.env.DB_NAME || "demodb",
@@ -54,6 +54,57 @@ app.get("/health", async (req, res) => {
       database: "disconnected",
       error: err.message,
     });
+  }
+});
+app.post("/users", async (req, res, next) => {
+  try {
+    const { name, email, phone } = req.body;
+
+    // Basic validation
+    if (!name || !email || !phone) {
+      return res.status(400).json({
+        error: "name, email and phone are required",
+      });
+    }
+
+    const { rows } = await pool.query(
+      `INSERT INTO users (name, email, phone)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [name, email, phone]
+    );
+
+    res.status(201).json({
+      message: "User created successfully ✅",
+      data: rows[0],
+    });
+  } catch (err) {
+    // Handle duplicate errors (important)
+    if (err.code === "23505") {
+      return res.status(400).json({
+        error: "Email or phone already exists",
+      });
+    }
+
+    next(err);
+  }
+});
+app.get("/users", async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, phone, created_at 
+       FROM users 
+       ORDER BY created_at DESC`
+    );
+
+    res.status(200).json({
+      message: "Users fetched successfully ✅",
+      count: rows.length,
+      data: rows,
+    });
+
+  } catch (err) {
+    next(err);
   }
 });
 
@@ -126,7 +177,9 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal Server Error",
   });
 });
-
+app.get("/", (req, res) => {
+  res.send('Hello this is working on the port 3008');
+})
 /**
  * ─────────────────────────────────────────────────────────────
  * SERVER START

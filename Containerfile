@@ -2,11 +2,11 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install
 
 # ─── Stage 2: Final lean image ───────────────────────────────────────────────
 FROM node:20-alpine AS runner
-LABEL org.opencontainers.image.source="https://github.com/<your-username>/podman-demo"
+LABEL org.opencontainers.image.source="https://github.com/akumar-techrayslabs/podman-demo"
 LABEL org.opencontainers.image.description="Express + PostgreSQL demo for Podman & GHCR"
 LABEL org.opencontainers.image.licenses="MIT"
 

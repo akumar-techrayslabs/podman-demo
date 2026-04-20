@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-  # ── PostgreSQL ────────────────────────────────────────────────────────────
   db:
     image: docker.io/library/postgres:16-alpine
     container_name: demo_dbs
@@ -12,7 +11,6 @@ services:
       POSTGRES_DB: demodb
     volumes:
       - pg_data:/var/lib/postgresql/data
-      # Auto-run migrations on first boot
       - ./db/migrations:/docker-entrypoint-initdb.d:ro
     ports:
       - "5433:5432"
@@ -22,19 +20,17 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Express API ───────────────────────────────────────────────────────────
   api:
-    # Option A – build locally
     build:
       context: .
       dockerfile: Containerfile
-    # Option B – pull from GHCR (comment A out and uncomment this)
-    # image: ghcr.io/<your-username>/podman-demo:latest
     container_name: demo_apis
     restart: unless-stopped
+
     depends_on:
       db:
         condition: service_healthy
+
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -42,8 +38,17 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: demodb
       PORT: 3000
+
     ports:
       - "3008:3000"
+
+    # 🔥 THIS ENABLES LIVE CODE SYNC
+    volumes:
+      - ./src:/app/src
+      # - /app/node_modules   # not needed since mounting only src
+
+    # 🔥 RUN DEV MODE
+    command: npm run dev
 
 volumes:
   pg_data:

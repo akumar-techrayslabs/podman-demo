@@ -1,4 +1,12 @@
 -- Run automatically via docker-entrypoint-initdb.d
+CREATE TABLE IF NOT EXISTS users (
+    id          SERIAL PRIMARY KEY,
+    name        TEXT        NOT NULL,
+    email       TEXT        UNIQUE NOT NULL,
+    phone       TEXT        NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS notes (
     id          SERIAL PRIMARY KEY,
     title       TEXT        NOT NULL,
